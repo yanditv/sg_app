@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 import '../providers/bluetooth_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/socket_provider.dart';
+
+class ChartData {
+  final int x;
+  final int y;
+  ChartData(this.x, this.y);
+}
 
 class ECGScreen extends StatefulWidget {
   final BluetoothProvider? controller;
@@ -13,6 +19,9 @@ class ECGScreen extends StatefulWidget {
 }
 
 class _ECGScreenState extends State<ECGScreen> {
+  final int maxPoints = 30;
+  List<ChartData> chartData = [];
+  ChartSeriesController? _seriesController;
   List<int> get ecgData => widget.controller?.ecgData ?? [];
   bool get isConnecting => widget.controller?.isConnecting ?? true;
 
@@ -30,13 +39,26 @@ class _ECGScreenState extends State<ECGScreen> {
   }
 
   void _onControllerUpdate() {
-    setState(() {});
+    if (ecgData.isNotEmpty) {
+      final nextX = chartData.isNotEmpty ? chartData.last.x + 1 : 0;
+      chartData.add(ChartData(nextX, ecgData.last));
+      if (chartData.length > maxPoints) {
+        chartData.removeAt(0);
+      }
+      if (_seriesController != null) {
+        _seriesController!.updateDataSource(
+          addedDataIndexes: <int>[chartData.length - 1],
+          removedDataIndexes: chartData.length > maxPoints ? <int>[0] : null,
+        );
+      } else {
+        setState(() {});
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final int maxPoints = 100; // Número máximo de puntos visibles en el gráfico
-    final lastValue = ecgData.isNotEmpty ? ecgData.last : null;
+    final lastValue = chartData.isNotEmpty ? chartData.last.y : null;
     final btController = widget.controller;
     final isConnected =
         btController?.statusString.contains('Conectado') ?? false;
@@ -45,17 +67,16 @@ class _ECGScreenState extends State<ECGScreen> {
     final socketProvider = Provider.of<SocketProvider?>(context, listen: true);
     final estadoAnalisis = socketProvider?.estadoAnalisis;
 
-    // Solo los últimos maxPoints datos
-    final List<int> visibleData = ecgData.length > maxPoints
-        ? ecgData.sublist(ecgData.length - maxPoints)
-        : ecgData;
-
     // Calcular minY y maxY con margen para visualización
     double minY = 50;
     double maxY = 120;
-    if (visibleData.isNotEmpty) {
-      minY = visibleData.reduce((a, b) => a < b ? a : b).toDouble() - 5;
-      maxY = visibleData.reduce((a, b) => a > b ? a : b).toDouble() + 5;
+    if (chartData.isNotEmpty) {
+      minY =
+          chartData.map((e) => e.y).reduce((a, b) => a < b ? a : b).toDouble() -
+          5;
+      maxY =
+          chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b).toDouble() +
+          5;
       if (minY < 0) minY = 0;
     }
 
@@ -232,47 +253,36 @@ class _ECGScreenState extends State<ECGScreen> {
                               ),
                               const SizedBox(height: 18),
                               Expanded(
-                                child: LineChart(
-                                  LineChartData(
-                                    minY: minY,
-                                    maxY: maxY,
-                                    titlesData: FlTitlesData(show: false),
-                                    gridData: FlGridData(
-                                      show: true,
-                                      drawVerticalLine: false,
-                                      horizontalInterval: 10,
-                                      getDrawingHorizontalLine: (_) => FlLine(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        strokeWidth: 1,
-                                      ),
-                                    ),
-                                    borderData: FlBorderData(show: false),
-                                    lineBarsData: [
-                                      LineChartBarData(
-                                        spots: [
-                                          for (
-                                            int i = 0;
-                                            i < visibleData.length;
-                                            i++
-                                          )
-                                            FlSpot(
-                                              i.toDouble(),
-                                              visibleData[i].toDouble(),
-                                            ),
-                                        ],
-                                        isCurved: true,
-                                        color: Colors.redAccent,
-                                        barWidth: 2.5,
-                                        dotData: FlDotData(show: false),
-                                        belowBarData: BarAreaData(
-                                          show: true,
-                                          color: Colors.redAccent.withOpacity(
-                                            0.1,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                child: SfCartesianChart(
+                                  plotAreaBorderWidth: 0,
+                                  margin: EdgeInsets.zero,
+                                  primaryXAxis: NumericAxis(isVisible: false),
+                                  primaryYAxis: NumericAxis(
+                                    minimum: minY,
+                                    maximum: maxY,
+                                    isVisible: false,
                                   ),
+                                  series: <SplineSeries<ChartData, int>>[
+                                    SplineSeries<ChartData, int>(
+                                      onRendererCreated: (controller) {
+                                        _seriesController = controller;
+                                      },
+                                      dataSource: chartData,
+                                      xValueMapper: (ChartData data, _) =>
+                                          data.x,
+                                      yValueMapper: (ChartData data, _) =>
+                                          data.y,
+                                      color: Colors.redAccent,
+                                      width: 2.5,
+                                      markerSettings: const MarkerSettings(
+                                        isVisible: false,
+                                      ),
+                                      splineType: SplineType.natural,
+                                      animationDuration: 0,
+                                    ),
+                                  ],
+                                  enableAxisAnimation: false,
+                                  isTransposed: false,
                                 ),
                               ),
                               const SizedBox(height: 18),

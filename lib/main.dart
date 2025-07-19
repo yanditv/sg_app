@@ -53,7 +53,7 @@ class ECGApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<BluetoothProvider>(
-      create: (_) => BluetoothProvider(useSimulator: true)..initBluetooth(),
+      create: (_) => BluetoothProvider(useSimulator: false)..initBluetooth(),
       child: Builder(
         builder: (context) {
           final btController = Provider.of<BluetoothProvider>(
