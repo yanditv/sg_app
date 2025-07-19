@@ -32,16 +32,26 @@ class _SettingsPageState extends State<SettingsPage> {
     bool isLoading = controller?.isConnecting ?? false;
     bool isButtonDisabled = isLoading || _buttonLocked;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes de Bluetooth')),
+      appBar: AppBar(
+        title: const Text('Ajustes de Bluetooth'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.blueAccent,
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          Icon(Icons.settings, color: Colors.blueAccent),
+          const SizedBox(width: 16),
+        ],
+      ),
       body: controller == null
           ? const Center(child: Text('Controlador no disponible'))
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Card(
-                  elevation: 4,
+          : ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Card(
+                  elevation: 5,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(22),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -78,11 +88,15 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              controller.statusString,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
+                            Flexible(
+                              child: Text(
+                                controller.statusString,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                softWrap: true,
+                                overflow: TextOverflow.visible,
                               ),
                             ),
                           ],
@@ -93,13 +107,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                LineAwesomeIcons.microchip_solid,
+                                Icons.memory,
                                 color: Colors.blueGrey,
                                 size: 22,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Dispositivo: [controller.deviceName]',
+                                'Dispositivo: ${controller.deviceName}',
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ],
@@ -154,7 +168,37 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 32),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 18,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '¿Problemas de conexión?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Asegúrate de que el Bluetooth esté activado y el dispositivo esté cerca. Si el problema persiste, reinicia el dispositivo o revisa los permisos.',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }

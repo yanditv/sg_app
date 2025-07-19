@@ -1,10 +1,18 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothController extends ChangeNotifier {
+  /// Llama a esto desde la UI si statusString contiene 'denegado permanentemente'.
+  Future<void> openAppSettingsIfNeeded() async {
+    if (Platform.isIOS && statusString.contains('denegado permanentemente')) {
+      await openAppSettings();
+    }
+  }
+
   BluetoothDevice? _device;
   // BluetoothCharacteristic? _characteristic; // Removed unused field
   List<int> ecgData = [];
@@ -31,22 +39,31 @@ class BluetoothController extends ChangeNotifier {
     } catch (e) {
       statusString = 'Error inicial: $e';
       notifyListeners();
-      rethrow;
+      // No relanzar la excepción para evitar que la app se rompa
     }
   }
 
   Future<void> _requestPermissions() async {
     try {
-      final statuses = await [
-        Permission.bluetooth,
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.locationWhenInUse,
-      ].request();
-      if (!statuses[Permission.bluetooth]!.isGranted ||
-          !statuses[Permission.bluetoothScan]!.isGranted ||
-          !statuses[Permission.bluetoothConnect]!.isGranted) {
-        throw 'Permisos Bluetooth insuficientes';
+      if (Platform.isIOS) {
+        // Según la guía oficial de flutter_blue_plus, en iOS NO se debe pedir permiso de localización.
+        // Solo asegúrate de que Info.plist tenga las claves necesarias.
+        // No se solicita ningún permiso aquí para iOS.
+        return;
+      } else {
+        final statuses = await [
+          Permission.bluetooth,
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse,
+        ].request();
+        if (!statuses[Permission.bluetooth]!.isGranted ||
+            !statuses[Permission.bluetoothScan]!.isGranted ||
+            !statuses[Permission.bluetoothConnect]!.isGranted) {
+          statusString = 'Permisos Bluetooth insuficientes';
+          notifyListeners();
+          throw 'Permisos Bluetooth insuficientes';
+        }
       }
     } catch (e) {
       debugPrint('Permission error: $e');

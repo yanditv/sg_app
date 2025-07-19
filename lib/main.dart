@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'screens/info_page.dart';
+import 'screens/home_dashboard.dart';
 import 'screens/ecg_screen.dart';
 import 'screens/settings_page.dart';
+import 'screens/permission_screen.dart';
 import 'bluetooth_controller.dart';
 
 void main() => runApp(const ECGApp());
-
 final ThemeData appTheme = ThemeData(
   colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
   useMaterial3: true,
@@ -49,11 +51,14 @@ class ECGApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ECG Bluetooth Classic',
-      theme: appTheme,
-      home: const MainNavigation(),
-      debugShowCheckedModeBanner: false,
+    return ChangeNotifierProvider(
+      create: (_) => BluetoothController()..initBluetooth(),
+      child: MaterialApp(
+        title: 'ECG Bluetooth Classic',
+        theme: appTheme,
+        home: const MainNavigation(),
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
@@ -67,22 +72,30 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
-  final BluetoothController _btController = BluetoothController();
-
-  @override
-  void initState() {
-    super.initState();
-    _btController.initBluetooth();
-  }
-
-  @override
-  void dispose() {
-    _btController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    // Si el permiso está denegado, mostrar pantalla de advertencia
+    final btController = Provider.of<BluetoothController>(context);
+    final status = btController.statusString;
+    final isPermDenied =
+        status.contains('denegado permanentemente') ||
+        status.contains('insuficiente');
+    final isBtOff =
+        status.contains('Bluetooth desactivado') ||
+        status.contains('Active Bluetooth');
+
+    if (isPermDenied) {
+      return PermissionScreen(
+        message: status,
+        onOpenSettings: btController.openAppSettingsIfNeeded,
+        onRetry: () async {
+          await btController.initBluetooth();
+          setState(() {});
+        },
+      );
+    }
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -94,38 +107,74 @@ class _MainNavigationState extends State<MainNavigation> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: IndexedStack(
-            index: _selectedIndex,
+          maintainBottomViewPadding: true,
+          bottom: true,
+          child: Column(
             children: [
-              InfoPage(),
-              ECGScreen(controller: _btController),
-              SettingsPage(controller: _btController),
+              if (isBtOff)
+                Container(
+                  width: double.infinity,
+                  color: Colors.red.withOpacity(0.12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.bluetooth_disabled,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Activa el Bluetooth para conectar con dispositivos.',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: [
+                    InfoPage(),
+                    HomeDashboard(userName: 'Gumilar Jae'),
+                    ECGScreen(controller: btController),
+                    SettingsPage(controller: btController),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        bottomNavigationBar: SalomonBottomBar(
-          currentIndex: _selectedIndex,
+        extendBody: true,
+        bottomNavigationBar: CircleNavBar(
+          activeIndex: _selectedIndex,
           onTap: (index) => setState(() => _selectedIndex = index),
-          items: [
-            SalomonBottomBarItem(
-              icon: Icon(LineAwesomeIcons.home_solid),
-              title: const Text('Inicio'),
-              selectedColor: Colors.blue,
-            ),
-            SalomonBottomBarItem(
-              icon: Icon(LineAwesomeIcons.heart),
-              title: const Text('ECG'),
-              selectedColor: Colors.red,
-            ),
-            SalomonBottomBarItem(
-              icon: Icon(LineAwesomeIcons.bluetooth),
-              title: const Text('Ajustes'),
-              selectedColor: Colors.green,
-            ),
+          circleColor: Colors.blueAccent,
+          elevation: 0,
+          color: Colors.white,
+          height: 90,
+          circleWidth: 60,
+          shadowColor: Colors.black26,
+          activeIcons: [
+            Icon(Icons.info_outline, color: Colors.white),
+            Icon(LineAwesomeIcons.home_solid, color: Colors.white),
+            Icon(LineAwesomeIcons.heart, color: Colors.white),
+            Icon(LineAwesomeIcons.bluetooth, color: Colors.white),
           ],
-          backgroundColor: Colors.white.withOpacity(0.95),
-          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-          duration: const Duration(milliseconds: 350),
+          inactiveIcons: [
+            Icon(Icons.info_outline, color: Colors.blueAccent),
+            Icon(LineAwesomeIcons.home_solid, color: Colors.blueAccent),
+            Icon(LineAwesomeIcons.heart, color: Colors.red),
+            Icon(LineAwesomeIcons.bluetooth, color: Colors.green),
+          ],
         ),
       ),
     );

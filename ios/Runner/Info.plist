@@ -8,6 +8,8 @@
 	<string>Esta app usa Bluetooth para recibir datos del ECG.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>La localización es necesaria para buscar dispositivos Bluetooth cercanos.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Esta app necesita acceso a la red local para depuración y comunicación BLE.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
