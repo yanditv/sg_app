@@ -24,7 +24,7 @@ class SocketProvider extends ChangeNotifier {
 
   void _startPeriodicSend() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => sendEcgData());
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) => sendEcgData());
     // Enviar inmediatamente al iniciar
     sendEcgData();
   }

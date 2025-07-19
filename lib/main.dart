@@ -1,7 +1,9 @@
+import 'providers/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+
 import 'screens/acerca_page.dart';
 import 'screens/home_dashboard.dart';
 import 'screens/ecg_screen.dart';
@@ -31,7 +33,7 @@ final ThemeData appTheme = ThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(24)),
     ),
-    margin: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+    margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -52,11 +54,28 @@ class ECGApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<BluetoothProvider>(
       create: (_) => BluetoothProvider(useSimulator: true)..initBluetooth(),
-      child: MaterialApp(
-        title: 'ECG Bluetooth Classic',
-        theme: appTheme,
-        home: const MainNavigation(),
-        debugShowCheckedModeBanner: false,
+      child: Builder(
+        builder: (context) {
+          final btController = Provider.of<BluetoothProvider>(
+            context,
+            listen: false,
+          );
+          return ChangeNotifierProvider(
+            create: (_) {
+              final provider = SocketProvider(
+                bluetoothController: btController,
+              );
+              provider.init();
+              return provider;
+            },
+            child: MaterialApp(
+              title: 'ECG Bluetooth Classic',
+              theme: appTheme,
+              home: const MainNavigation(),
+              debugShowCheckedModeBanner: false,
+            ),
+          );
+        },
       ),
     );
   }
@@ -74,75 +93,89 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BluetoothProvider>(
-      builder: (context, btController, _) {
-        final status = btController.statusString;
-        final isPermDenied =
-            status.contains('denegado permanentemente') ||
-            status.contains('insuficiente');
-        final isBtOff =
-            status.trim() == 'Bluetooth desactivado' ||
-            status.trim() == 'Active Bluetooth en ajustes del dispositivo';
+    final btController = Provider.of<BluetoothProvider>(context, listen: false);
+    final status = btController.statusString;
+    final isPermDenied =
+        status.contains('denegado permanentemente') ||
+        status.contains('insuficiente');
 
-        if (isPermDenied) {
-          return PermissionScreen(
-            message: status,
-            onOpenSettings: btController.openAppSettingsIfNeeded,
-            onRetry: () async {
-              await btController.initBluetooth();
-              if (mounted) setState(() {});
-            },
-          );
-        }
+    if (isPermDenied) {
+      return PermissionScreen(
+        message: status,
+        onOpenSettings: btController.openAppSettingsIfNeeded,
+        onRetry: () async {
+          await btController.initBluetooth();
+          if (mounted) setState(() {});
+        },
+      );
+    }
 
-        return _buildMainScaffold(isBtOff, btController);
-      },
-    );
+    return _buildMainScaffold();
   }
 
-  Widget _buildMainScaffold(bool isBtOff, BluetoothProvider btController) {
+  Widget _buildMainScaffold() {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         maintainBottomViewPadding: false,
         child: Column(
           children: [
-            if (isBtOff)
-              Container(
-                width: double.infinity,
-                color: Colors.red.withAlpha((0.12 * 255).toInt()),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.bluetooth_disabled,
-                      color: Colors.red,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Activa el Bluetooth para conectar con dispositivos.',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
+            // Bluetooth Off Warning Banner
+            Consumer<BluetoothProvider>(
+              builder: (context, btController, _) {
+                final status = btController.statusString.trim();
+                final isBtOff =
+                    status == 'Bluetooth desactivado' ||
+                    status == 'Active Bluetooth en ajustes del dispositivo';
+
+                if (!isBtOff) return const SizedBox.shrink();
+
+                return Container(
+                  width: double.infinity,
+                  color: Colors.red.withAlpha((0.12 * 255).toInt()),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.bluetooth_disabled,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Activa el Bluetooth para conectar con dispositivos.',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            // Main content
             Expanded(
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  HomeDashboard(userName: 'Roxsel Gonzalez'),
-                  ECGScreen(controller: btController),
-                  SettingsPage(controller: btController),
-                  AcercaPage(),
+                  const HomeDashboard(userName: 'Roxsel Gonzalez'),
+                  Consumer<BluetoothProvider>(
+                    builder: (context, btController, _) {
+                      return ECGScreen(controller: btController);
+                    },
+                  ),
+                  Consumer<BluetoothProvider>(
+                    builder: (context, btController, _) {
+                      return SettingsPage(controller: btController);
+                    },
+                  ),
+                  const AcercaPage(),
                 ],
               ),
             ),
@@ -175,6 +208,3 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
-// ...existing code...
-
-//

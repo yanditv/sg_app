@@ -196,7 +196,6 @@ class HomeDashboard extends StatelessWidget {
                     label: 'Ver Temp.',
                   ),
                   _QuickAccessButton(icon: Icons.history, label: 'Historial'),
-                  _QuickAccessButton(icon: Icons.edit, label: 'Editar Perfil'),
                 ],
               ),
               const SizedBox(height: 32),
@@ -298,8 +297,6 @@ class _DashboardCard extends StatelessWidget {
     );
   }
 }
-
-// _ResultTile eliminado en rediseño
 
 class _QuickAccessButton extends StatelessWidget {
   final IconData icon;

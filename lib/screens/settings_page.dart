@@ -32,17 +32,6 @@ class _SettingsPageState extends State<SettingsPage> {
     bool isLoading = controller?.isConnecting ?? false;
     bool isButtonDisabled = isLoading || _buttonLocked;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ajustes de Bluetooth'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blueAccent,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          Icon(Icons.settings, color: Colors.blueAccent),
-          const SizedBox(width: 16),
-        ],
-      ),
       body: controller == null
           ? const Center(child: Text('Controlador no disponible'))
           : ListView(
