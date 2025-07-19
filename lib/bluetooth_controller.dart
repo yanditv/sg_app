@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothController extends ChangeNotifier {
   BluetoothDevice? _device;
-  BluetoothCharacteristic? _characteristic;
+  // BluetoothCharacteristic? _characteristic; // Removed unused field
   List<int> ecgData = [];
   bool isConnecting = false;
   String? deviceName;
@@ -185,7 +185,7 @@ class BluetoothController extends ChangeNotifier {
       orElse: () => throw 'Característica ECG no encontrada',
     );
     await characteristic.setNotifyValue(true);
-    _characteristic = characteristic;
+    // _characteristic = characteristic; // Removed assignment to unused field
     _valueSubscription = characteristic.onValueReceived.listen(_processECGData);
   }
 
