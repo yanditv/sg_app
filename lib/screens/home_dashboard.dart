@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/bluetooth_provider.dart';
+import '../providers/socket_provider.dart';
 
 class HomeDashboard extends StatelessWidget {
   final String userName;
@@ -7,143 +10,231 @@ class HomeDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-        ),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.blue[100],
-                      child: Icon(
-                        Icons.person,
-                        size: 36,
-                        color: Colors.blueAccent,
-                      ),
+    final btController = Provider.of<BluetoothProvider>(context);
+    final isConnected = btController.statusString.contains('Conectado');
+    final deviceName = btController.deviceName ?? 'Sin dispositivo';
+    final ecgValue = btController.ecgData.isNotEmpty
+        ? btController.ecgData.last
+        : null;
+    final socketProvider = Provider.of<SocketProvider?>(context, listen: true);
+    final estadoAnalisis = socketProvider?.estadoAnalisis;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.blue[50],
+                    child: Icon(
+                      Icons.person,
+                      size: 38,
+                      color: Colors.blueAccent,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hola,',
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                userName,
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
-                                ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bienvenido,',
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              userName,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
                               ),
-                              const SizedBox(width: 6),
-                              const Text('👋', style: TextStyle(fontSize: 20)),
-                            ],
-                          ),
-                        ],
+                            ),
+                            const SizedBox(width: 6),
+                            const Text('👋', style: TextStyle(fontSize: 20)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                color: isConnected ? Colors.green[50] : Colors.red[50],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isConnected
+                            ? LineAwesomeIcons.bluetooth
+                            : Icons.bluetooth_disabled,
+                        color: isConnected ? Colors.green : Colors.red,
+                        size: 32,
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.menu, color: Colors.blueAccent),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _DashboardCard(
-                      color: Colors.blue,
-                      icon: LineAwesomeIcons.comments,
-                      title: 'Konsultasi',
-                      subtitle: '89 dokter',
-                      onTap: () {},
-                    ),
-                    _DashboardCard(
-                      color: Colors.pinkAccent,
-                      icon: LineAwesomeIcons.comments,
-                      title: 'Apotek',
-                      subtitle: '6 Apotek',
-                      onTap: () {},
-                    ),
-                    _DashboardCard(
-                      color: Colors.orange,
-                      icon: LineAwesomeIcons.hospital,
-                      title: 'Rumah Sakit',
-                      subtitle: '6 RS',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Hasil Medical Check-up',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.blueAccent,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isConnected
+                                  ? 'Dispositivo conectado'
+                                  : 'Sin conexión',
+                              style: TextStyle(
+                                color: isConnected ? Colors.green : Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              deviceName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isConnected && ecgValue != null)
+                        Chip(
+                          label: Text(
+                            'ECG: $ecgValue',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.blueAccent,
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                _ResultTile(
-                  icon: Icons.bloodtype,
-                  title: 'General Blood Analysis',
+              ),
+              const SizedBox(height: 22),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Resumen Biomédico',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  if (estadoAnalisis != null)
+                    Chip(
+                      label: Text(
+                        'Análisis: $estadoAnalisis',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Colors.blueAccent,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _DashboardCard(
+                    color: Colors.blue,
+                    icon: Icons.monitor_heart,
+                    title: 'ECG',
+                    subtitle: ecgValue != null ? '$ecgValue μV' : '--',
+                    onTap: () {},
+                  ),
+                  _DashboardCard(
+                    color: Colors.pinkAccent,
+                    icon: Icons.thermostat,
+                    title: 'Temp.',
+                    subtitle: '-- °C',
+                    onTap: () {},
+                  ),
+                  _DashboardCard(
+                    color: Colors.orange,
+                    icon: Icons.person,
+                    title: 'Paciente',
+                    subtitle: isConnected ? 'Activo' : 'Inactivo',
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'Accesos rápidos',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blueAccent,
                 ),
-                _ResultTile(icon: Icons.coronavirus, title: 'Swab Antigen'),
-                const SizedBox(height: 24),
-                Text(
-                  'Periksa Kesehatan Sendiri',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.blueAccent,
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _QuickAccessButton(
+                    icon: Icons.monitor_heart,
+                    label: 'Ver ECG',
+                  ),
+                  _QuickAccessButton(
+                    icon: Icons.thermostat,
+                    label: 'Ver Temp.',
+                  ),
+                  _QuickAccessButton(icon: Icons.history, label: 'Historial'),
+                  _QuickAccessButton(icon: Icons.edit, label: 'Editar Perfil'),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Educación y ayuda',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Card(
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.blueAccent,
+                        size: 28,
+                      ),
+                      SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          'Recuerda que esta app no reemplaza la consulta médica profesional. Ante cualquier duda, consulta a tu especialista.',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    _QuickAccessButton(
-                      icon: LineAwesomeIcons.heart,
-                      label: 'Risiko Jantung',
-                    ),
-                    _QuickAccessButton(
-                      icon: LineAwesomeIcons.user,
-                      label: 'Kalkulator Risiko',
-                    ),
-                    _QuickAccessButton(
-                      icon: LineAwesomeIcons.calendar,
-                      label: 'Kalender Menstruasi',
-                    ),
-                    _QuickAccessButton(
-                      icon: LineAwesomeIcons.user,
-                      label: 'Kalkulator Kehamilan',
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -173,20 +264,20 @@ class _DashboardCard extends StatelessWidget {
         width: 100,
         height: 110,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withAlpha((0.10 * 255).toInt()),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: color.withAlpha((0.07 * 255).toInt()),
+              blurRadius: 7,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 36),
+            Icon(icon, color: color, size: 34),
             const SizedBox(height: 10),
             Text(
               title,
@@ -208,26 +299,7 @@ class _DashboardCard extends StatelessWidget {
   }
 }
 
-class _ResultTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  const _ResultTile({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: ListTile(
-        leading: Icon(icon, color: Colors.blueAccent),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
-        trailing: Icon(Icons.chevron_right, color: Colors.blueAccent),
-        onTap: () {},
-      ),
-    );
-  }
-}
+// _ResultTile eliminado en rediseño
 
 class _QuickAccessButton extends StatelessWidget {
   final IconData icon;
@@ -245,14 +317,14 @@ class _QuickAccessButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                color: Colors.blue.withAlpha((0.07 * 255).toInt()),
+                blurRadius: 7,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(18),
-          child: Icon(icon, color: Colors.blueAccent, size: 28),
+          padding: const EdgeInsets.all(16),
+          child: Icon(icon, color: Colors.blueAccent, size: 26),
         ),
         const SizedBox(height: 8),
         Text(

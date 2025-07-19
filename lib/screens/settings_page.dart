@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import 'package:sg_app/bluetooth_controller.dart';
+import '../providers/bluetooth_provider.dart';
 
 class SettingsPage extends StatefulWidget {
-  final BluetoothController? controller;
+  final BluetoothProvider? controller;
   const SettingsPage({super.key, this.controller});
 
   @override
@@ -13,7 +13,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _buttonLocked = false;
 
-  void _handleReconnect(BluetoothController controller) async {
+  void _handleReconnect(BluetoothProvider controller) async {
     setState(() {
       _buttonLocked = true;
     });
