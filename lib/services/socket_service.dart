@@ -7,7 +7,7 @@ class SocketService {
 
   void connect(Function(String estado) onEstado) {
     socket = io.io(
-      'http://localhost:8000',
+      'https://proyecto-reto-ecg.fly.dev',
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
