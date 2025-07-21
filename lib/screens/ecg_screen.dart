@@ -19,7 +19,7 @@ class ECGScreen extends StatefulWidget {
 }
 
 class _ECGScreenState extends State<ECGScreen> {
-  final int maxPoints = 30;
+  final int maxPoints = 80;
   List<ChartData> chartData = [];
   ChartSeriesController? _seriesController;
   List<int> get ecgData => widget.controller?.ecgData ?? [];
