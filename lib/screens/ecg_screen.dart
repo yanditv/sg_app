@@ -39,7 +39,17 @@ class _ECGScreenState extends State<ECGScreen> {
   }
 
   void _onControllerUpdate() {
-    if (ecgData.isNotEmpty) {
+    // Si ecgData está vacío, limpiar la gráfica
+    if (ecgData.isEmpty) {
+      if (chartData.isNotEmpty) {
+        chartData.clear();
+        setState(() {});
+      }
+      return;
+    }
+
+    // Solo agregar si hay un nuevo valor
+    if (chartData.length < ecgData.length) {
       final nextX = chartData.isNotEmpty ? chartData.last.x + 1 : 0;
       chartData.add(ChartData(nextX, ecgData.last));
       if (chartData.length > maxPoints) {
@@ -68,8 +78,8 @@ class _ECGScreenState extends State<ECGScreen> {
     final estadoAnalisis = socketProvider?.estadoAnalisis;
 
     // Calcular minY y maxY con margen para visualización
-    double minY = 50;
-    double maxY = 120;
+    double minY = 4095;
+    double maxY = 0;
     if (chartData.isNotEmpty) {
       minY =
           chartData.map((e) => e.y).reduce((a, b) => a < b ? a : b).toDouble() -

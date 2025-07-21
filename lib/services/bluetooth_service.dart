@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+typedef ECGDataCallback = void Function(List<int> ecgData);
+
 class BluetoothService {
   BluetoothDevice? _device;
   List<int> ecgData = [];
@@ -13,6 +15,7 @@ class BluetoothService {
   StreamSubscription? _connectionSubscription;
   StreamSubscription<List<int>>? _valueSubscription;
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
+  ECGDataCallback? onECGData;
 
   // Constants
   static const String serviceUUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -164,9 +167,11 @@ class BluetoothService {
     try {
       final raw = utf8.decode(value);
       final json = jsonDecode(raw);
+      print('Datos ECG recibidos: $json');
       final ecgValue = json['ecg'] as int;
       ecgData.add(ecgValue);
       if (ecgData.length > 200) ecgData.removeAt(0);
+      onECGData?.call(List.unmodifiable(ecgData));
     } catch (e) {
       // Silenciar error
     }

@@ -5,13 +5,16 @@ import '../services/bluetooth_service_simulator.dart';
 
 class BluetoothProvider extends ChangeNotifier {
   final bool useSimulator;
-  final BluetoothService _service = BluetoothService();
+  late final BluetoothService _service;
   BluetoothServiceSimulator? _simulator;
 
   BluetoothProvider({this.useSimulator = false}) {
     if (useSimulator) {
       _simulator = BluetoothServiceSimulator(onData: (_) => notifyListeners());
       _simulator!.start();
+    } else {
+      _service = BluetoothService();
+      _service.onECGData = (_) => notifyListeners();
     }
   }
 
